@@ -9,24 +9,125 @@ import siakadmini.dao.MahasiswaDao;
 import siakadmini.entity.Mahasiswa;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
 /**
  *
  * @author yunhasnawa
  */
-public class FormUtama extends javax.swing.JFrame {
+public class FormUtama extends javax.swing.JFrame implements ListSelectionListener{
 
-    private DefaultTableModel tableModelMain;
+    private final MahasiswaDao daoMahasiswa;
+    private ArrayList<Mahasiswa> listMahasiswa;
+    private DefaultTableModel modelTblDataMahasiswa;
     
-    public FormUtama() {
+    public FormUtama() 
+    {
         initComponents();
         
+        this.daoMahasiswa = new MahasiswaDao();
+        
+        this.siapkanTblDataMahasiswa();
+        this.muatUlangListMahasiswa();
+    }
+    
+    private void siapkanTblDataMahasiswa()
+    {
         // Persiapkan table model terlebih dahulu
         String[] daftarKolom = new String[]{"Nim", "Nama", "Alamat"};
         int jumlahBaris = 0;
-        this.tableModelMain = new DefaultTableModel(daftarKolom, jumlahBaris);
-        this.tableMain.setModel(this.tableModelMain);
+        this.modelTblDataMahasiswa = new DefaultTableModel(daftarKolom, jumlahBaris);
+        this.tblDataMahasiswa.setModel(this.modelTblDataMahasiswa);
+        
+        // Tangani even ketika tabel diklik baris-barisnya
+        this.tblDataMahasiswa.getSelectionModel().addListSelectionListener(this);
+    }
+    
+    private void resetKomponen()
+    {
+        this.txtNim.setText("");
+        this.txtNama.setText("");
+        this.txtAlamat.setText("");
+        
+        this.btnSimpan.setText("Simpan!");
+    }
+    
+    private void muatUlangListMahasiswa()
+    {
+        if(this.listMahasiswa == null)
+            this.listMahasiswa = new ArrayList<>();
+        
+        this.listMahasiswa.clear();
+        
+        ArrayList<Mahasiswa> semuaMhs = this.daoMahasiswa.selectAll();
+        
+        for(Mahasiswa m : semuaMhs)         
+            this.listMahasiswa.add(m);
+    }
+    
+    private void muatUlangTblDataMahasiswa()
+    {   
+        // Bersihkan tabel
+        while(this.modelTblDataMahasiswa.getRowCount() > 0)
+        {
+            this.modelTblDataMahasiswa.removeRow(0);
+        }
+        
+        // Tambahkan baris tabel satu persatu
+        for(Mahasiswa m : this.listMahasiswa)
+        {
+            Object[] dataBaris = new Object[]{
+                m.getNim(),
+                m.getNama(),
+                m.getAlamat()
+            };
+            
+            this.modelTblDataMahasiswa.addRow(dataBaris);
+        }
+    }
+    
+    private Mahasiswa entityMahasiswaDariKomponen()
+    {
+        if(this.txtNim.getText().isEmpty())
+            return null; // Tidak berhasil membuat entity dari komponen
+        
+        Integer nim = Integer.parseInt(this.txtNim.getText());
+        String nama = this.txtNama.getText();
+        String alamat = this.txtAlamat.getText();
+        
+        Mahasiswa m = new Mahasiswa(nim, nama, alamat);
+        
+        return m;
+    }
+    
+    private void updateMahasiswa(Mahasiswa m)
+    {
+        // Update data mahasiswa dilakukan disini..
+        this.daoMahasiswa.update(m);
+    }
+    
+    private void tambahMahasiswa(Mahasiswa m)
+    {
+        if(this.daoMahasiswa.insertOne(m))
+        {
+            JOptionPane.showMessageDialog(
+                    this, 
+                    "Data mahasiswa berhasil ditambahkan.", 
+                    "Informasi", 
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+        else
+        {
+            JOptionPane.showMessageDialog(
+                    this, 
+                    "Data mahasiswa gagal ditambahkan!", 
+                    "Galat", 
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 
     /**
@@ -39,7 +140,7 @@ public class FormUtama extends javax.swing.JFrame {
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        tableMain = new javax.swing.JTable();
+        tblDataMahasiswa = new javax.swing.JTable();
         btnRefresh = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         txtNim = new javax.swing.JTextField();
@@ -48,10 +149,11 @@ public class FormUtama extends javax.swing.JFrame {
         txtAlamat = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         btnSimpan = new javax.swing.JButton();
+        btnHapus = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        tableMain.setModel(new javax.swing.table.DefaultTableModel(
+        tblDataMahasiswa.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -62,7 +164,7 @@ public class FormUtama extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane1.setViewportView(tableMain);
+        jScrollPane1.setViewportView(tblDataMahasiswa);
 
         btnRefresh.setText("Refresh");
         btnRefresh.addActionListener(new java.awt.event.ActionListener() {
@@ -81,6 +183,13 @@ public class FormUtama extends javax.swing.JFrame {
         btnSimpan.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnSimpanActionPerformed(evt);
+            }
+        });
+
+        btnHapus.setText("Hapus");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
             }
         });
 
@@ -107,6 +216,8 @@ public class FormUtama extends javax.swing.JFrame {
                             .addComponent(txtNama)))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(btnHapus)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnSimpan)))
                 .addContainerGap())
         );
@@ -126,7 +237,9 @@ public class FormUtama extends javax.swing.JFrame {
                     .addComponent(jLabel3)
                     .addComponent(txtAlamat, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(btnSimpan)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnSimpan)
+                    .addComponent(btnHapus))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
@@ -136,63 +249,50 @@ public class FormUtama extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
+    
     private void btnRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRefreshActionPerformed
         
-        this.bersihkanTabel();
-        
-        MahasiswaDao md = new MahasiswaDao();
-        
-        ArrayList<Mahasiswa> semuaMhs = md.findAll();
-        
-        for(Mahasiswa m : semuaMhs)
-        {
-            Object[] dataBaris = new Object[]{
-                m.getNim(),
-                m.getNama(),
-                m.getAlamat()
-            };
-            
-            this.tableModelMain.addRow(dataBaris);
-        }
+        this.muatUlangListMahasiswa();
+        this.muatUlangTblDataMahasiswa();
     }//GEN-LAST:event_btnRefreshActionPerformed
 
     private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
         
-        Integer nim = Integer.parseInt(this.txtNim.getText());
-        String nama = this.txtNama.getText();
-        String alamat = this.txtAlamat.getText();
+        Mahasiswa m = this.entityMahasiswaDariKomponen();
+        if(m == null) return; // Jangan lakukan apa-apa
         
-        Mahasiswa m = new Mahasiswa(nim, nama, alamat);
-        
-        MahasiswaDao md = new MahasiswaDao();
-        
-        if(md.insertOne(m))
-        {
-            JOptionPane.showMessageDialog(
-                    this, 
-                    "Data mahasiswa berhasil ditambahkan.", 
-                    "Informasi", 
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-        }
-        else
-        {
-            JOptionPane.showMessageDialog(
-                    this, 
-                    "Data mahasiswa gagal ditambahkan!", 
-                    "Galat", 
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
+        if(this.btnSimpan.getText().equals("Simpan!"))
+            this.tambahMahasiswa(m);
+        else if(this.btnSimpan.getText().equals("Update!"))
+            this.updateMahasiswa(m);
     }//GEN-LAST:event_btnSimpanActionPerformed
 
-    private void bersihkanTabel()
-    {   
-        while(this.tableModelMain.getRowCount() > 0)
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        
+        Mahasiswa m = this.entityMahasiswaDariKomponen();
+        if(m == null) return; // Jangan lakukan apa-apa
+        
+        this.daoMahasiswa.deleteOne(m);
+    }//GEN-LAST:event_btnHapusActionPerformed
+    
+    @Override
+    public void valueChanged(ListSelectionEvent e) 
+    {
+        int row = this.tblDataMahasiswa.getSelectedRow();
+        
+        if(row < 0 || row > this.listMahasiswa.size())
         {
-            this.tableModelMain.removeRow(0);
+            this.resetKomponen();
+            return;
         }
+        
+        Mahasiswa mhsTerpilih = this.listMahasiswa.get(row);
+        
+        this.txtNim.setText(mhsTerpilih.getNim().toString());
+        this.txtNama.setText(mhsTerpilih.getNama());
+        this.txtAlamat.setText(mhsTerpilih.getAlamat());
+        
+        this.btnSimpan.setText("Update!");
     }
     
     /**
@@ -232,15 +332,18 @@ public class FormUtama extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btnHapus;
     private javax.swing.JButton btnRefresh;
     private javax.swing.JButton btnSimpan;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable tableMain;
+    private javax.swing.JTable tblDataMahasiswa;
     private javax.swing.JTextField txtAlamat;
     private javax.swing.JTextField txtNama;
     private javax.swing.JTextField txtNim;
     // End of variables declaration//GEN-END:variables
+
+    
 }

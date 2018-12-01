@@ -33,7 +33,7 @@ public class MahasiswaDao
         if(where != null)
             sql += (" " + where);
         
-        ResultSet hasil = this.buatResultSet(sql);
+        ResultSet hasil = this.getResultSet(sql);
         
         ArrayList<Mahasiswa> mahasiswaTerpilih = new ArrayList<>();
         
@@ -58,7 +58,7 @@ public class MahasiswaDao
         return mahasiswaTerpilih;
     }
     
-    private ResultSet buatResultSet(String sql)
+    private ResultSet getResultSet(String sql)
     {  
         ResultSet hasil;
         
@@ -81,7 +81,7 @@ public class MahasiswaDao
         return hasil;
     }
     
-    public ArrayList<Mahasiswa> findAll()
+    public ArrayList<Mahasiswa> selectAll()
     {
         ArrayList<Mahasiswa> semua = this.selectWhere(null);
         
@@ -108,5 +108,19 @@ public class MahasiswaDao
         {
             return false;
         }
+    }
+
+    public boolean update(Mahasiswa m) 
+    {
+        // Kode untuk update data mahasiswa...
+        
+        return true; // Sesuaikan true/false nilai baliknya!
+    }
+    
+    public boolean deleteOne(Mahasiswa m)
+    {
+        // Kode untuk menghapus data mahasiswa...
+        
+        return true; // Sesuaikan true/false nilai baliknya!
     }
 }
